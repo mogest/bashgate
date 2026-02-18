@@ -1,0 +1,236 @@
+{
+  "commands": [
+    "base64",
+    "basename",
+    "cat",
+    "cd",
+    "column",
+    "comm",
+    "cut",
+    "date",
+    "df",
+    "diff",
+    "diffstat",
+    "dirname",
+    "du",
+    "echo",
+    {
+      "command": "fd",
+      "ask": {
+        "flags": [
+          "-x",
+          "--exec",
+          "-X",
+          "--exec-batch"
+        ]
+      }
+    },
+    "file",
+    {
+      "command": "find",
+      "ask": {
+        "flags": [
+          "-exec",
+          "-execdir",
+          "-ok",
+          "-okdir",
+          "-delete",
+          "-fls",
+          "-fprint",
+          "-fprint0",
+          "-fprintf"
+        ]
+      }
+    },
+    {
+      "command": "gh",
+      "allow": {
+        "subcommands": [
+          {
+            "subcommand": "api",
+            "allow": {
+              "any_path": true
+            },
+            "ask": {
+              "flags": [
+                "-f",
+                "--field",
+                "--raw-field",
+                "--input"
+              ],
+              "arg_regex": "(?i)-(X|-method)[= ]?(POST|PUT|PATCH|DELETE)"
+            }
+          },
+          "cache list",
+          "issue list",
+          "issue view",
+          "pr checks",
+          "pr create",
+          "pr diff",
+          "pr list",
+          "pr view",
+          "repo view",
+          "release list",
+          "release view",
+          "run list",
+          "run view",
+          "search issues"
+        ]
+      }
+    },
+    {
+      "command": "git",
+      "flags_with_args": [
+        "-C",
+        "-c",
+        "--git-dir",
+        "--work-tree",
+        "--namespace",
+        "--exec-path"
+      ],
+      "allow": {
+        "subcommands": [
+          "add",
+          "blame",
+          {
+            "subcommand": "branch",
+            "ask": {
+              "flags": [
+                "-d",
+                "-D",
+                "--delete",
+                "-f",
+                "--force",
+                "-C",
+                "-M"
+              ]
+            }
+          },
+          "checkout -b",
+          {
+            "subcommand": "commit",
+            "ask": {
+              "flags": [
+                "--amend"
+              ]
+            }
+          },
+          "diff",
+          "fetch",
+          "log",
+          "ls-files",
+          "ls-tree",
+          {
+            "subcommand": "push",
+            "ask": {
+              "flags": [
+                "--force",
+                "-f",
+                "--force-with-lease",
+                "--force-if-includes",
+                "--delete",
+                "-d",
+                "--mirror",
+                "--all",
+                "--prune",
+                "--no-verify"
+              ],
+              "arg_regex": ":[^\\s]+"
+            }
+          },
+          "reflog",
+          "rev-parse",
+          "show",
+          "status",
+          "tag"
+        ]
+      }
+    },
+    {
+      "command": "go",
+      "allow": {
+        "subcommands": [
+          "build",
+          "doc",
+          "env",
+          "fmt",
+          "list",
+          "mod download",
+          "mod graph",
+          "mod tidy",
+          "mod verify",
+          "mod why",
+          "test",
+          "version",
+          "vet"
+        ]
+      }
+    },
+    {
+      "command": "grep",
+      "allow": {
+        "any_path": {
+          "position": 1
+        }
+      }
+    },
+    "head",
+    "jq",
+    "ls",
+    "md5",
+    "mise exec -- bundle exec rspec",
+    "mkdir",
+    {
+      "command": "mix",
+      "allow": {
+        "subcommands": [
+          "clean",
+          "compile",
+          "credo",
+          "deps",
+          "deps.compile",
+          "deps.get",
+          "dialyzer",
+          "format",
+          "test"
+        ]
+      }
+    },
+    "nl",
+    "od",
+    "paste",
+    "pbcopy",
+    "printf",
+    "pwd",
+    "realpath",
+    "rev",
+    "rg",
+    {
+      "command": "sed",
+      "allow": {
+        "any_path": {
+          "position": 1
+        }
+      },
+      "ask": {
+        "arg_regex": "(?:-i\\S*|--in-place)"
+      }
+    },
+    "seq",
+    "shasum",
+    "sleep",
+    "sort",
+    "stat",
+    "strings",
+    "tail",
+    "test",
+    "tr",
+    "tree",
+    "uname",
+    "uniq",
+    "wc",
+    "which",
+    "whoami",
+    "xxd"
+  ]
+}

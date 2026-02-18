@@ -1,0 +1,2 @@
+[tasks.test]
+run = ".venv/bin/pytest"
