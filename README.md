@@ -132,6 +132,14 @@ bashgate validate --config path/to/config.json
 
 This checks for structural errors, unknown keys, and invalid regex patterns.
 
+## Uninstalling
+
+```sh
+bashgate uninstall
+```
+
+This removes the hook entry from `~/.claude/settings.json`. If `~/.claude/bashgate.json` exists, it will alert you but won't delete it — remove it manually if you no longer need it.
+
 ## `find` considered annoying
 
 You'll find bashgate trips up on `find` quite a bit because of its awkward syntax.  I'd suggest

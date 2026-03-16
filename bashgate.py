@@ -965,6 +965,61 @@ def cmd_install():
             print("Create one to define allowed commands. Without it, all commands fall through.")
 
 
+def cmd_uninstall():
+    """Remove bashgate hook from ~/.claude/settings.json."""
+    settings_path = _settings_path()
+
+    # Load existing settings
+    try:
+        with open(settings_path) as f:
+            settings = json.load(f)
+    except FileNotFoundError:
+        print(f"No settings file found at {settings_path}")
+        return
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"Error reading {settings_path}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    hooks = settings.get("hooks", {})
+    pre_tool_use = hooks.get("PreToolUse", [])
+
+    # Find and remove bashgate entries
+    found = False
+    new_pre_tool_use = []
+    for entry in pre_tool_use:
+        if entry.get("matcher") != "Bash":
+            new_pre_tool_use.append(entry)
+            continue
+        original_hooks = entry.get("hooks", [])
+        remaining_hooks = [
+            h for h in original_hooks
+            if "bashgate" not in h.get("command", "")
+        ]
+        if len(remaining_hooks) < len(original_hooks):
+            found = True
+        if remaining_hooks:
+            entry["hooks"] = remaining_hooks
+            new_pre_tool_use.append(entry)
+
+    if not found:
+        print(f"No bashgate hook found in {settings_path}")
+    else:
+        if new_pre_tool_use:
+            hooks["PreToolUse"] = new_pre_tool_use
+        else:
+            hooks.pop("PreToolUse", None)
+        if not hooks:
+            settings.pop("hooks", None)
+        _write_settings(settings_path, settings)
+        print(f"Removed bashgate hook from {settings_path}")
+
+    # Alert about config file
+    config_path = os.path.expanduser("~/.claude/bashgate.json")
+    if os.path.isfile(config_path):
+        print(f"\nNote: Config file still exists at {config_path}")
+        print("You may want to remove it manually if no longer needed.")
+
+
 def _write_settings(path, settings):
     """Write settings JSON to the given path."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -983,6 +1038,7 @@ def cmd_help():
     print("Commands:")
     print("  bashgate hook [options]   Run as a Claude Code PreToolUse hook (reads JSON from stdin)")
     print("  bashgate install          Install hook into ~/.claude/settings.json")
+    print("  bashgate uninstall        Remove hook from ~/.claude/settings.json")
     print("  bashgate validate         Validate a config file")
     print()
     print("Hook options:")
@@ -1173,6 +1229,8 @@ def main():
         cmd_hook(rest)
     elif subcommand == "install":
         cmd_install()
+    elif subcommand == "uninstall":
+        cmd_uninstall()
     elif subcommand == "validate":
         cmd_validate(rest)
     else:

@@ -2295,6 +2295,159 @@ def test_install_no_settings_file():
         assert "bashgate" in settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
 
 
+# ── uninstall command ──────────────────────────────────────────────────
+
+def test_uninstall_removes_hook():
+    """Uninstall removes the bashgate hook entry from settings."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings_path = os.path.join(tmpdir, "settings.json")
+        settings = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [{"type": "command", "command": "/path/to/bashgate.py hook"}],
+                    }
+                ]
+            }
+        }
+        with open(settings_path, "w") as f:
+            json.dump(settings, f)
+        result = subprocess.run(
+            [sys.executable, HOOK, "uninstall"],
+            capture_output=True, text=True,
+            env={**os.environ, "HOME": tmpdir, "BASHGATE_SETTINGS_PATH": settings_path},
+        )
+        assert result.returncode == 0
+        assert "Removed" in result.stdout
+        with open(settings_path) as f:
+            updated = json.load(f)
+        assert "hooks" not in updated
+
+
+def test_uninstall_preserves_other_hooks():
+    """Uninstall preserves non-bashgate hooks."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings_path = os.path.join(tmpdir, "settings.json")
+        settings = {
+            "hooks": {
+                "PreToolUse": [
+                    {"matcher": "", "hooks": [{"type": "command", "command": "echo hi"}]},
+                    {
+                        "matcher": "Bash",
+                        "hooks": [{"type": "command", "command": "/path/to/bashgate.py hook"}],
+                    },
+                ]
+            }
+        }
+        with open(settings_path, "w") as f:
+            json.dump(settings, f)
+        result = subprocess.run(
+            [sys.executable, HOOK, "uninstall"],
+            capture_output=True, text=True,
+            env={**os.environ, "HOME": tmpdir, "BASHGATE_SETTINGS_PATH": settings_path},
+        )
+        assert result.returncode == 0
+        with open(settings_path) as f:
+            updated = json.load(f)
+        pre_tool_use = updated["hooks"]["PreToolUse"]
+        assert len(pre_tool_use) == 1
+        assert pre_tool_use[0]["matcher"] == ""
+
+
+def test_uninstall_no_hook_present():
+    """Uninstall when no bashgate hook exists prints informative message."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings_path = os.path.join(tmpdir, "settings.json")
+        with open(settings_path, "w") as f:
+            json.dump({"hooks": {"PreToolUse": []}}, f)
+        result = subprocess.run(
+            [sys.executable, HOOK, "uninstall"],
+            capture_output=True, text=True,
+            env={**os.environ, "HOME": tmpdir, "BASHGATE_SETTINGS_PATH": settings_path},
+        )
+        assert result.returncode == 0
+        assert "No bashgate hook found" in result.stdout
+
+
+def test_uninstall_no_settings_file():
+    """Uninstall when settings.json doesn't exist prints informative message."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings_path = os.path.join(tmpdir, "nonexistent", "settings.json")
+        result = subprocess.run(
+            [sys.executable, HOOK, "uninstall"],
+            capture_output=True, text=True,
+            env={**os.environ, "HOME": tmpdir, "BASHGATE_SETTINGS_PATH": settings_path},
+        )
+        assert result.returncode == 0
+        assert "No settings file found" in result.stdout
+
+
+def test_uninstall_alerts_about_config():
+    """Uninstall alerts about existing bashgate.json but doesn't delete it."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings_path = os.path.join(tmpdir, "settings.json")
+        settings = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [{"type": "command", "command": "/path/to/bashgate.py hook"}],
+                    }
+                ]
+            }
+        }
+        with open(settings_path, "w") as f:
+            json.dump(settings, f)
+        # Create a config file
+        config_path = os.path.join(tmpdir, ".claude", "bashgate.json")
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, "w") as f:
+            json.dump({"commands": []}, f)
+        result = subprocess.run(
+            [sys.executable, HOOK, "uninstall"],
+            capture_output=True, text=True,
+            env={**os.environ, "HOME": tmpdir, "BASHGATE_SETTINGS_PATH": settings_path},
+        )
+        assert result.returncode == 0
+        assert "Config file still exists" in result.stdout
+        # Config should NOT be deleted
+        assert os.path.isfile(config_path)
+
+
+def test_uninstall_preserves_other_bash_hooks():
+    """Uninstall preserves non-bashgate hooks within the same Bash matcher entry."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings_path = os.path.join(tmpdir, "settings.json")
+        settings = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [
+                            {"type": "command", "command": "echo other"},
+                            {"type": "command", "command": "/path/to/bashgate.py hook"},
+                        ],
+                    }
+                ]
+            }
+        }
+        with open(settings_path, "w") as f:
+            json.dump(settings, f)
+        result = subprocess.run(
+            [sys.executable, HOOK, "uninstall"],
+            capture_output=True, text=True,
+            env={**os.environ, "HOME": tmpdir, "BASHGATE_SETTINGS_PATH": settings_path},
+        )
+        assert result.returncode == 0
+        with open(settings_path) as f:
+            updated = json.load(f)
+        bash_entry = updated["hooks"]["PreToolUse"][0]
+        assert bash_entry["matcher"] == "Bash"
+        assert len(bash_entry["hooks"]) == 1
+        assert bash_entry["hooks"][0]["command"] == "echo other"
+
+
 # ── ignore_local_configs option ────────────────────────────────────────
 
 def test_ignore_local_configs_skips_local(tmp_path):
